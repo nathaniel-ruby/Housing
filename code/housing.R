@@ -27,10 +27,13 @@ housing_2000_geo <- merge(geography, housing_2000)
 
 ## First append the datasets. We will have one
 ## observation per census tract per year
-colnames(housing_1970_geo_app) < gsub(pattern - "\\d?$", "", colnames(housing_1970_geo))
-colnames(housing_1980_geo_app) < gsub(pattern - "\\d?$", "", colnames(housing_1980_geo))
-colnames(housing_1990_geo_app) < gsub(pattern - "\\d?$", "", colnames(housing_1990_geo))
-colnames(housing_2000_geo_app) < gsub(pattern - "\\d?$", "", colnames(housing_2000_geo))
+colnames(housing_1970_geo) <- gsub(pattern = "\\d?$", "", colnames(housing_1970_geo))
+colnames(housing_1980_geo) <- gsub(pattern = "\\d?$", "", colnames(housing_1980_geo))
+colnames(housing_1990_geo) <- gsub(pattern = "\\d?$", "", colnames(housing_1990_geo))
+colnames(housing_2000_geo) <- gsub(pattern = "\\d?$", "", colnames(housing_2000_geo))
+
+housing_append <- bind_rows(housing_1970_geo, housing_1980_geo, housing_1990_geo, housing_2000_geo)
+
 
 ## Merge Geography dataset 
 ## and 1970 - 2000 data
@@ -43,15 +46,12 @@ housing_merge <- merge(geography, housing_1970) %>%
 
 ## Calculate proportion 
 ## white in each year
-housing_all <- housing_all %>%
-	       mutate(SHRWHT7_PCT = SHRWHT7N/TRCTPOP7,
-                      SHRWHT8_PCT = SHRWHT8N/TRCTPOP8,
-                      SHRWHT9_PCT = SHRWHT9N/TRCTPOP9,
-                      SHRWHT0_PCT = SHRWHT0N/TRCTPOP0)
+housing_merge_all <- housing_merge %>%
+	             mutate(SHRWHT7_PCT = SHRWHT7N/TRCTPOP7,
+                      	    SHRWHT8_PCT = SHRWHT8N/TRCTPOP8,
+                      	    SHRWHT9_PCT = SHRWHT9N/TRCTPOP9,
+                      	    SHRWHT0_PCT = SHRWHT0N/TRCTPOP0)
 
 
-## Reshape so that there is one 
-## census tract observation
-## per decade
 
-## This is a test
+

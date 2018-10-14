@@ -20,10 +20,14 @@ housing_2000 <- read.csv("Housing_2000.csv", stringsAsFactors = FALSE)
 ## Merge each dataset to 'geography' so that
 ## every dataset contains identifiable geographic
 ## information
-housing_1970_geo <- merge(geography, housing_1970)
-housing_1980_geo <- merge(geography, housing_1980)
-housing_1990_geo <- merge(geography, housing_1990)
-housing_2000_geo <- merge(geography, housing_2000)
+housing_1970_geo <- merge(geography, housing_1970) %>% 
+		    mutate(Year = 1970)
+housing_1980_geo <- merge(geography, housing_1980) %>% 
+		    mutate(Year = 1980)
+housing_1990_geo <- merge(geography, housing_1990) %>% 
+		    mutate(Year = 1990)
+housing_2000_geo <- merge(geography, housing_2000) %>% 
+		    mutate(Year = 2000)
 
 ## First append the datasets. We will have one
 ## observation per census tract per year
@@ -46,11 +50,23 @@ housing_merge <- merge(geography, housing_1970) %>%
 
 ## Calculate proportion 
 ## white in each year
-housing_merge_all <- housing_merge %>%
-	             mutate(SHRWHT7_PCT = SHRWHT7N/TRCTPOP7,
-                      	    SHRWHT8_PCT = SHRWHT8N/TRCTPOP8,
-                      	    SHRWHT9_PCT = SHRWHT9N/TRCTPOP9,
-                      	    SHRWHT0_PCT = SHRWHT0N/TRCTPOP0)
+housing_merge <- housing_merge %>%
+	         mutate(SHRWHT7_PCT = SHRWHT7N/SHR7D,
+                  	SHRWHT8_PCT = SHRWHT8N/SHR8D,
+                  	SHRWHT9_PCT = SHRWHT9N/SHR9D,
+                  	SHRWHT0_PCT = SHRWHT0N/SHR0D)
+
+
+
+
+## Calculate change
+## in housing value
+housing_merge <- housing_merge %>%
+		 mutate(AGGVAL78_PCT = AGGVAL8/AGGVAL7,
+                        AGGVAL89_PCT = AGGVAL9/AGGVAL8,
+                        AGGVAL90_PCT = AGGVAL0/AGGVAL9)
+
+
 
 
 

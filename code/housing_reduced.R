@@ -16,7 +16,7 @@ library(dplyr)
 library(ggplot2)
 library(Hmisc)
 
-setwd("~/Sasha/Housing/code/")
+setwd("~/Sasha/Housing/raw/")
 
 geography       <- read.csv("Geography.csv", stringsAsFactors = FALSE)
 housing_reduced <- read.csv("Reduced.csv"  , stringsAsFactors = FALSE)
@@ -25,7 +25,7 @@ housing_reduced <- read.csv("Reduced.csv"  , stringsAsFactors = FALSE)
 housing_all <- merge(geography, housing_reduced) 
 
 ## Label Variables
-source("source_label.R")
+source("~/Sasha/Housing/code/source_label.R")
 
 for (year in c(8,9,0)) {
   
@@ -50,18 +50,23 @@ for (year in c(8,9,0)) {
   housing_all[,new_var][housing_all[new_var] > quant_95] <- quant_95 
 
   ## Create bins
-  housing_all[sharewht_bins] <- cut(housing_all[,sharewht], c(0, .1, .2, 3., .4, .5, .6, .7, .8, .9, 1))
+  housing_all[sharewht_bins] <- as.character(cut(housing_all[,sharewht], c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1)))
 }
 
-sharewhite_year <- function(year) {
-  
-  evaluate <- ggplot(housing_all) +
-              geom_bar(aes(SHRWHT9BIN, AGGVAL98), 
-      	               stat     = "summary", 
-                       position = "dodge", 
-                       fun.y    = "mean")
+sharewhite_plot <- function(share_weight, agg_val) {
+ 
+  housing_subset <- housing_all[!is.na(housing_all[,share_weight]),]
+ 
+  evaluate <- ggplot(data = housing_subset)      + 
+              geom_bar(aes_string(share_weight, agg_val),
+		       stat     = "summary"      , 
+                       position = "dodge"        ,       
+                       fun.y    = "mean"         ) 
+
   return(evaluate)
 }
 
-sharewhite_year(8)
+eight_plot <- sharewhite_plot("SHRWHT8BIN", "AGGVAL87")
+nine_plot  <- sharewhite_plot("SHRWHT9BIN", "AGGVAL98")
+aught_plot <- sharewhite_plot("SHRWHT0BIN", "AGGVAL09")
 

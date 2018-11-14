@@ -1,0 +1,233 @@
+
+R version 3.4.3 (2017-11-30) -- "Kite-Eating Tree"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> library(data.table)
+
+Attaching package: ‘data.table’
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, first, last
+
+> library(sf)
+Linking to GEOS 3.5.0, GDAL 2.1.3, PROJ 4.9.2
+> library(doParallel)
+Loading required package: foreach
+Loading required package: iterators
+Loading required package: parallel
+> 
+> setwd("~/Sasha/Housing/shapes/raw")	
+> 
+> nCores <- 4 
+> registerDoParallel(nCores)
+> 
+> crosswalk <- function(decade_one, decade_two) {
++ 
++   ## Create decade abbreviations
++   decade_one_abbrev <- substr(decade_one, 3, 4)
++   decade_two_abbrev <- substr(decade_two, 3, 4)
++ 
++   ## Read in Shape Files
++   decade_one_tracts <- st_read(dsn = path.expand(paste0("./shapes_", decade_one)), layer = paste0("US_tract_",decade_one))
++   decade_two_tracts <- st_read(dsn = path.expand(paste0("./shapes_", decade_two)), layer = paste0("US_tract_",decade_two))
++   
++   for (state in unique(decade_one_tracts$NHGISST)) {
++   
++     print(paste("This is state", state))
++     
++     ## Subset both tracts by state
++     decade_one_state <- subset(decade_one_tracts, as.character(NHGISST) == state)
++     decade_two_state <- subset(decade_two_tracts, as.character(NHGISST) == state) %>%
++     		     	mutate(Match_Area = st_area(.))
++ 
++     #matches <- list()
++     matches <- foreach (obs = 1:nrow(decade_one_state), .combine = rbind) %dopar% {
++ 	
++       ## Find intersection of decade_one_state[i]
++       ## and decade_two_tracts
++       ## Drop geometry
++       st_intersection(decade_one_state[obs,], decade_two_state) %>%
++       mutate(Intersect_Area    = st_area(.),
++              Intersect_Percent = Intersect_Area/Match_Area)     %>%
++       st_set_geometry(., NULL)
++ 
++     }
++   
++     ## Concatenate matches for each state
++     #crosswalk_tracts <- rbindlist(matches)
++ 
++     ## Write each state crosswalk_tracts
++     ## to .Rda
++     saveRDS(matches, file = paste0("~/Sasha/Housing/crosswalk/crosswalk_",decade_one_abbrev,decade_two_abbrev,"/crosswalk_",state,".rds"))
++ 
++     ## Clear crosswalk data and matches
++     rm(matches, decade_one_state, decade_two_state)
++   }
++ 
++ }
+> 
+> crosswalk(1940, 1950)
+Reading layer `US_tract_1940' from data source `/accounts/projects/jr_ra/Sasha/Housing/shapes/raw/shapes_1940' using driver `ESRI Shapefile'
+Simple feature collection with 7563 features and 6 fields
+geometry type:  MULTIPOLYGON
+dimension:      XY
+bbox:           xmin: -7115713 ymin: -873314.3 xmax: 2029575 ymax: 2275545
+epsg (SRID):    NA
+proj4string:    +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
+Reading layer `US_tract_1950' from data source `/accounts/projects/jr_ra/Sasha/Housing/shapes/raw/shapes_1950' using driver `ESRI Shapefile'
+Simple feature collection with 12634 features and 6 fields
+geometry type:  MULTIPOLYGON
+dimension:      XY
+bbox:           xmin: -7115713 ymin: -1188352 xmax: 2054720 ymax: 2275545
+epsg (SRID):    NA
+proj4string:    +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
+[1] "This is state 550"
+[1] "This is state 480"
+[1] "This is state 470"
+[1] "This is state 530"
+[1] "This is state 420"
+[1] "This is state 440"
+[1] "This is state 450"
+[1] "This is state 510"
+[1] "This is state 390"
+[1] "This is state 360"
+[1] "This is state 410"
+[1] "This is state 400"
+[1] "This is state 290"
+[1] "This is state 260"
+[1] "This is state 340"
+[1] "This is state 220"
+[1] "This is state 270"
+[1] "This is state 250"
+[1] "This is state 170"
+[1] "This is state 240"
+[1] "This is state 210"
+[1] "This is state 180"
+[1] "This is state 130"
+[1] "This is state 090"
+[1] "This is state 060"
+[1] "This is state 080"
+[1] "This is state 190"
+[1] "This is state 110"
+[1] "This is state 010"
+[1] "This is state 155"
+Warning message:
+attribute variables are assumed to be spatially constant throughout all geometries 
+> crosswalk(1950, 1960)
+Reading layer `US_tract_1950' from data source `/accounts/projects/jr_ra/Sasha/Housing/shapes/raw/shapes_1950' using driver `ESRI Shapefile'
+Simple feature collection with 12634 features and 6 fields
+geometry type:  MULTIPOLYGON
+dimension:      XY
+bbox:           xmin: -7115713 ymin: -1188352 xmax: 2054720 ymax: 2275545
+epsg (SRID):    NA
+proj4string:    +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
+Reading layer `US_tract_1960' from data source `/accounts/projects/jr_ra/Sasha/Housing/shapes/raw/shapes_1960' using driver `ESRI Shapefile'
+Simple feature collection with 23096 features and 6 fields
+geometry type:  MULTIPOLYGON
+dimension:      XY
+bbox:           xmin: -7115713 ymin: -1249496 xmax: 2063676 ymax: 2275545
+epsg (SRID):    NA
+proj4string:    +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
+[1] "This is state 550"
+[1] "This is state 530"
+[1] "This is state 510"
+[1] "This is state 480"
+[1] "This is state 470"
+[1] "This is state 450"
+[1] "This is state 420"
+[1] "This is state 440"
+[1] "This is state 340"
+[1] "This is state 360"
+[1] "This is state 390"
+[1] "This is state 410"
+[1] "This is state 400"
+[1] "This is state 260"
+[1] "This is state 370"
+[1] "This is state 290"
+[1] "This is state 270"
+[1] "This is state 250"
+[1] "This is state 310"
+[1] "This is state 200"
+[1] "This is state 170"
+[1] "This is state 240"
+[1] "This is state 210"
+[1] "This is state 190"
+[1] "This is state 130"
+[1] "This is state 220"
+[1] "This is state 180"
+[1] "This is state 060"
+[1] "This is state 120"
+[1] "This is state 110"
+[1] "This is state 090"
+[1] "This is state 080"
+[1] "This is state 010"
+[1] "This is state 155"
+Warning message:
+attribute variables are assumed to be spatially constant throughout all geometries 
+> crosswalk(1960, 1970)
+Reading layer `US_tract_1960' from data source `/accounts/projects/jr_ra/Sasha/Housing/shapes/raw/shapes_1960' using driver `ESRI Shapefile'
+Simple feature collection with 23096 features and 6 fields
+geometry type:  MULTIPOLYGON
+dimension:      XY
+bbox:           xmin: -7115713 ymin: -1249496 xmax: 2063676 ymax: 2275545
+epsg (SRID):    NA
+proj4string:    +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
+Reading layer `US_tract_1970' from data source `/accounts/projects/jr_ra/Sasha/Housing/shapes/raw/shapes_1970' using driver `ESRI Shapefile'
+Simple feature collection with 34492 features and 6 fields
+geometry type:  MULTIPOLYGON
+dimension:      XY
+bbox:           xmin: -7115713 ymin: -1295867 xmax: 2146924 ymax: 3476641
+epsg (SRID):    NA
+proj4string:    +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
+[1] "This is state 550"
+[1] "This is state 540"
+[1] "This is state 530"
+[1] "This is state 510"
+[1] "This is state 480"
+[1] "This is state 490"
+[1] "This is state 420"
+[1] "This is state 450"
+[1] "This is state 470"
+[1] "This is state 440"
+[1] "This is state 390"
+[1] "This is state 340"
+[1] "This is state 240"
+[1] "This is state 410"
+[1] "This is state 400"
+[1] "This is state 360"
+[1] "This is state 370"
+[1] "This is state 290"
+[1] "This is state 350"
+[1] "This is state 310"
+[1] "This is state 270"
+[1] "This is state 260"
+[1] "This is state 330"
+[1] "This is state 250"
